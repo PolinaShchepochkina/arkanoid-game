@@ -5,8 +5,10 @@ const game = {
   platform: undefined,
   ball: undefined,
   bricks: [],
-  rows: 8,
+  rows: 7,
   cols: 14,
+  running: true,
+  score: 0,
   images: {
     background: undefined,
     platform: undefined,
@@ -17,12 +19,13 @@ const game = {
     brickorange: undefined,
     bricklightblue: undefined,
     brickpink: undefined,
-    brickred: undefined,
-    brickwhite: undefined
+    brickred: undefined
   },
   init: function () {
     const canvas = document.getElementById("gameCanvas");
     this.ctx = canvas.getContext("2d");
+    this.ctx.font = "10px Arial";
+    this.ctx.fillStyle = "#FFFFFF";
 
     window.addEventListener("keydown", function (event) {
       if (event.keyCode == 37) {
@@ -53,7 +56,7 @@ const game = {
       for (let col = 0; col < this.cols; col++) {
         this.bricks.push({
           x: 14 + (16 * col),
-          y: 14 + (8 * row),
+          y: 28 + (8 * row),
           width: 16,
           height: 8,
           color: color,
@@ -80,6 +83,8 @@ const game = {
         this.ctx.drawImage(brickSprite, brick.x, brick.y);
       }
     }, this);
+
+    this.ctx.fillText("SCORE: " + this.score, 14, 22);
   },
   update: function () {
     if (this.ball.collide(this.platform)) {
@@ -106,10 +111,17 @@ const game = {
     this.update();
     this.render();
 
-    window.requestAnimationFrame(function () {
-      game.run();
-    });
+    if (this.running) {
+      window.requestAnimationFrame(function () {
+        game.run();
+      });
+    }
   },
+  over: function (message) {
+    alert(message)
+    this.running = false;
+    window.location.reload();
+  }
 };
 
 game.ball = {
@@ -144,10 +156,14 @@ game.ball = {
   bumpBrick: function (brick) {
     this.dy *= -1;
     brick.isAlive = false;
-  },
-  bumpPlatform: function () {
-    this.dy = -this.velocity;
+    ++game.score;
 
+    if (game.score >= game.bricks.length) {
+      game.over("You win")
+    }
+  },
+  bumpPlatform: function (platform) {
+    this.dy = -this.velocity;
   },
   checkBounds: function () {
     let x = this.x + this.dx;
@@ -163,7 +179,7 @@ game.ball = {
       this.y = 0;
       this.dy = this.velocity;
     } else if (y + this.height > game.height) {
-      game.over();
+      game.over("Game over");
     }
   }
 };
@@ -174,7 +190,7 @@ game.platform = {
   x: 109,
   y: 259,
   dx: 0,
-  velocity: 6,
+  velocity: 5,
   ball: game.ball,
   releaseBall: function () {
     if (this.ball) {
@@ -195,9 +211,6 @@ game.platform = {
     if (this.ball) {
       this.ball.dx = 0;
     }
-  },
-  over: function () {
-    console.log('game over :(')
   }
 };
 
