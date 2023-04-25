@@ -106,6 +106,14 @@ const game = {
     }, this);
 
     this.ball.checkBounds();
+
+    if (this.platform.x < 10) {
+      this.platform.x = 10;
+      this.platform.stop();
+    } else if (this.platform.x + this.platform.width > this.width - 10) {
+      this.platform.x = this.width - this.platform.width - 10;
+      this.platform.stop();
+    }
   },
   run: function () {
     this.update();
@@ -162,21 +170,21 @@ game.ball = {
       game.over("You win")
     }
   },
-  bumpPlatform: function (platform) {
+  bumpPlatform: function () {
     this.dy = -this.velocity;
   },
   checkBounds: function () {
     let x = this.x + this.dx;
     let y = this.y + this.dy;
 
-    if (x < 0) {
-      this.x = 0;
+    if (x < 10) {
+      this.x = 10;
       this.dx = this.velocity;
-    } else if (x + this.width > game.width) {
-      this.x = game.width - this.width;
+    } else if (x + this.width > game.width - 10) {
+      this.x = game.width - this.width - 10;
       this.dx = -this.velocity;
-    } else if (y < 0) {
-      this.y = 0;
+    } else if (y < 10) {
+      this.y = 10;
       this.dy = this.velocity;
     } else if (y + this.height > game.height) {
       game.over("Game over");
