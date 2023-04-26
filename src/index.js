@@ -9,6 +9,7 @@ const game = {
   cols: 14,
   running: true,
   score: 0,
+  life: 3,
   images: {
     background: undefined,
     platform: undefined,
@@ -19,8 +20,10 @@ const game = {
     brickorange: undefined,
     bricklightblue: undefined,
     brickpink: undefined,
-    brickred: undefined
+    brickred: undefined,
+    life: undefined
   },
+
   init: function () {
     const canvas = document.getElementById("gameCanvas");
     this.ctx = canvas.getContext("2d");
@@ -28,12 +31,14 @@ const game = {
     this.ctx.fillStyle = "#FFFFFF";
 
     window.addEventListener("keydown", function (event) {
-      if (event.keyCode == 37) {
+      if (event.keyCode === 37) {
         game.platform.dx = -game.platform.velocity;
-      } else if (event.keyCode == 39) {
+      } else if (event.keyCode === 39) {
         game.platform.dx = game.platform.velocity;
-      } else if (event.keyCode == 32) {
-        game.platform.releaseBall();
+      } else if (event.keyCode === 32) {
+        if (game.life > 0) {
+          game.platform.releaseBall();
+        }
       }
     });
 
@@ -41,22 +46,26 @@ const game = {
       game.platform.stop();
     });
   },
+
   load: function () {
     for (let key in this.images) {
       this.images[key] = new Image();
-      this.images[key].src = "./images/" + key + ".png";
+      this.images[key].src = `./images/${key}.png`;
     }
   },
+
   create: function () {
-    const brickColors = Object.keys(this.images).filter(key => key.startsWith("brick"));
+    const brickColors = Object.keys(this.images).filter((key) =>
+      key.startsWith("brick")
+    );
 
     for (let row = 0; row < this.rows; row++) {
       const color = brickColors[row % brickColors.length];
 
       for (let col = 0; col < this.cols; col++) {
         this.bricks.push({
-          x: 14 + (16 * col),
-          y: 28 + (8 * row),
+          x: 14 + 16 * col,
+          y: 31 + 8 * row,
           width: 16,
           height: 8,
           color: color,
@@ -65,12 +74,14 @@ const game = {
       }
     }
   },
+
   start: function () {
     this.init();
     this.load();
     this.create();
     this.run();
   },
+
   render: function () {
     this.ctx.clearRect(0, 0, this.width, this.height);
 
@@ -84,8 +95,12 @@ const game = {
       }
     }, this);
 
-    this.ctx.fillText("SCORE: " + this.score, 14, 22);
+    this.ctx.fillText("SCORE: " + this.score, 14, 24);
+    for (let i = 0; i < this.life; i++) {
+      this.ctx.drawImage(this.images.life, 220 - (i * 17), 13);
+    }
   },
+
   update: function () {
     if (this.ball.collide(this.platform)) {
       this.ball.bumpPlatform(this.platform);
@@ -93,10 +108,16 @@ const game = {
 
     if (this.platform.dx) {
       this.platform.move();
+      if (!this.ball.dx && !this.ball.dy) {
+        this.ball.x = this.platform.x + this.platform.width / 2;
+        this.ball.y = this.platform.y - this.ball.height;
+      }
     }
     if (this.ball.dx || this.ball.dy) {
       this.ball.move();
     }
+
+
     this.bricks.forEach(function (brick) {
       if (brick.isAlive) {
         if (this.ball.collide(brick)) {
@@ -115,6 +136,7 @@ const game = {
       this.platform.stop();
     }
   },
+
   run: function () {
     this.update();
     this.render();
@@ -125,6 +147,7 @@ const game = {
       });
     }
   },
+
   over: function (message) {
     alert(message)
     this.running = false;
@@ -140,14 +163,17 @@ game.ball = {
   dx: 0,
   dy: 0,
   velocity: 1,
+
   jump: function () {
     this.dx = -this.velocity;
     this.dy = -this.velocity;
   },
+
   move: function () {
     this.x += this.dx;
     this.y += this.dy;
   },
+
   collide: function (brick) {
     let x = this.x + this.dx;
     let y = this.y + this.dy;
@@ -161,6 +187,7 @@ game.ball = {
     }
     return false;
   },
+
   bumpBrick: function (brick) {
     this.dy *= -1;
     brick.isAlive = false;
@@ -170,9 +197,11 @@ game.ball = {
       game.over("You win")
     }
   },
+
   bumpPlatform: function () {
     this.dy = -this.velocity;
   },
+
   checkBounds: function () {
     let x = this.x + this.dx;
     let y = this.y + this.dy;
@@ -183,11 +212,23 @@ game.ball = {
     } else if (x + this.width > game.width - 10) {
       this.x = game.width - this.width - 10;
       this.dx = -this.velocity;
+
     } else if (y < 10) {
       this.y = 10;
       this.dy = this.velocity;
     } else if (y + this.height > game.height) {
-      game.over("Game over");
+      game.life--;
+
+      if (game.life > 0) {
+        this.x = 123;
+        this.y = 254;
+        this.dx = 0;
+        this.dy = 0;
+        game.platform.x = 109;
+        game.platform.y = 259;
+      } else {
+        game.over("You lose");
+      }
     }
   }
 };
@@ -200,12 +241,14 @@ game.platform = {
   dx: 0,
   velocity: 5,
   ball: game.ball,
+
   releaseBall: function () {
-    if (this.ball) {
-      this.ball.jump();
+    if (game.life > 0) {
+      game.ball.jump();
       this.ball = false;
     }
   },
+
   move: function () {
     this.x += this.dx;
 
@@ -213,6 +256,7 @@ game.platform = {
       this.ball.x += this.dx;
     }
   },
+
   stop: function () {
     this.dx = 0;
 
