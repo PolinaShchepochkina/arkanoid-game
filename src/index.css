@@ -1,3 +1,5 @@
 #gameCanvas {
-  width: 40%;
+  display: flex;
+  width: 35%;
+  margin: 0 auto;
 }
